@@ -1,7 +1,7 @@
 import requests
 import logging
 from telegram import Update
-from telegram.ext import Updater, MessageHandler, Filters, CommandHandler, CallbackContext
+from telegram.ext import Updater, MessageHandler, filters, CommandHandler, CallbackContext
 from instagrapi import Client
 import os
 # تنظیمات توکن تلگرام و اطلاعات اینستاگرام
@@ -48,7 +48,7 @@ def main():
     dp.add_handler(CommandHandler("start", start))
 
     # دریافت پیام‌ها و عکس‌ها
-    dp.add_handler(MessageHandler(Filters.photo, handle_photo))
+    dp.add_handler(MessageHandler(filters.photo, handle_photo))
 
     # راه‌اندازی ربات
     updater.start_polling()
