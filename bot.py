@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler
 
 # اطلاعات مورد نیاز
-TELEGRAM_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+TELEGRAM_TOKEN = '7888584790:AAHwsghQpiyINTEBhIR4CT47i5JYfP3we4k'
 INSTAGRAM_USERNAME = 'YOUR_INSTAGRAM_USERNAME'
 INSTAGRAM_PASSWORD = 'YOUR_INSTAGRAM_PASSWORD'
 
