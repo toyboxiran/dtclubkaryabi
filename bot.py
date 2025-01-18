@@ -1,14 +1,14 @@
 import requests
 import logging
 from telegram import Update
-from telegram.ext import Updater, MessageHandler, filters, CommandHandler, CallbackContext
+from telegram.ext import Application, MessageHandler, CommandHandler, CallbackContext, filters
 from instagrapi import Client
 import os
-# تنظیمات توکن تلگرام و اطلاعات اینستاگرام
-TELEGRAM_TOKEN = '7888584790:AAHwsghQpiyINTEBhIR4CT47i5JYfP3we4k'
-INSTAGRAM_USERNAME = 'dtclubkaryabi'
-INSTAGRAM_PASSWORD = '@9126409124aB'
 
+# تنظیمات اولیه
+TELEGRAM_TOKEN = '7888584790:AAHwsghQpiyINTEBhIR4CT47i5JYfP3we4k'  # توکن ربات تلگرام
+INSTAGRAM_USERNAME = 'dtclubkaryabi'  # نام کاربری اینستاگرام
+INSTAGRAM_PASSWORD = '@9126409124aB'  # رمز عبور اینستاگرام
 
 # راه‌اندازی لاگ
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -18,21 +18,21 @@ logger = logging.getLogger(__name__)
 # راه‌اندازی کلاینت اینستاگرام
 instagram_client = Client()
 
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('سلام! من آماده هستم تا عکس‌های شما رو به استوری اینستاگرام ارسال کنم!')
+async def start(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text('سلام! من آماده هستم تا عکس‌های شما رو به استوری اینستاگرام ارسال کنم!')
 
-def handle_photo(update: Update, context: CallbackContext) -> None:
+async def handle_photo(update: Update, context: CallbackContext) -> None:
     # دریافت عکس
     photo = update.message.photo[-1]  # بزرگترین اندازه عکس
-    file = photo.get_file()
+    file = await photo.get_file()
     file.download('received_photo.jpg')  # ذخیره عکس در سرور
 
     # ارسال عکس به مدیر ربات برای تایید
-    update.message.reply_text("عکس دریافت شد. در حال ارسال برای تایید...")
+    await update.message.reply_text("عکس دریافت شد. در حال ارسال برای تایید...")
 
     # ارسال عکس به خود مدیر برای تایید
-    context.bot.send_photo(chat_id=update.message.from_user.id, photo=open('received_photo.jpg', 'rb'),
-                           caption="این عکسی است که دریافت شده. آیا می‌خواهید به استوری اینستاگرام ارسال شود؟")
+    await context.bot.send_photo(chat_id=update.message.from_user.id, photo=open('received_photo.jpg', 'rb'),
+                                 caption="این عکسی است که دریافت شده. آیا می‌خواهید به استوری اینستاگرام ارسال شود؟")
 
     # پس از تایید، ارسال عکس به استوری اینستاگرام
     instagram_client.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
@@ -40,21 +40,16 @@ def handle_photo(update: Update, context: CallbackContext) -> None:
 
 def main():
     """Start the bot."""
-    updater = Updater(TELEGRAM_TOKEN, use_context=True)
-
-    dp = updater.dispatcher
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
 
     # فرمان‌ها
-    dp.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("start", start))
 
     # دریافت پیام‌ها و عکس‌ها
-    dp.add_handler(MessageHandler(filters.photo, handle_photo))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
     # راه‌اندازی ربات
-    updater.start_polling()
-
-    # منتظر ماندن تا دستورات به پایان برسند
-    updater.idle()
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
