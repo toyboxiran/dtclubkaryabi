@@ -1,7 +1,7 @@
 import os
 import logging
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
 from instagrapi import Client
 import requests
 
@@ -55,7 +55,7 @@ def main():
 
     # ثبت دستورات و پیام‌های ربات
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.photo, handle_photo))
+    dispatcher.add_handler(MessageHandler(filters.photo, handle_photo))
 
     # شروع ربات
     updater.start_polling()
