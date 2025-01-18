@@ -13,7 +13,7 @@ logging.basicConfig(
 # لاگین به اینستاگرام
 insta_client = Client()
 INSTAGRAM_USERNAME = os.getenv("dtclubkaryabi")
-INSTAGRAM_PASSWORD = os.getenv("@9126409124ab")
+INSTAGRAM_PASSWORD = os.getenv("@9126409124aB")
 
 try:
     insta_client.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
