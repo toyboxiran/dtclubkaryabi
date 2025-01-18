@@ -1,72 +1,49 @@
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-from instagrapi import Client
-import os
-import logging
+from telegram.ext import Updater, CommandHandler, MessageHandler
+from telegram.ext import filters
+from instabot import Bot  # کتابخانه اینستاگرام برای ارسال استوری
 
-# تنظیمات لاگ برای خطایابی
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+# توکن ربات تلگرام
+TELEGRAM_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+INSTAGRAM_USERNAME = "YOUR_INSTAGRAM_USERNAME"
+INSTAGRAM_PASSWORD = "YOUR_INSTAGRAM_PASSWORD"
 
-# لاگین به اینستاگرام
-insta_client = Client()
-INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME")
-INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD")
+# راه‌اندازی ربات تلگرام
+updater = Updater(TELEGRAM_TOKEN, use_context=True)
+dispatcher = updater.dispatcher
 
-try:
-    insta_client.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
-    logging.info("Logged in to Instagram successfully!")
-except Exception as e:
-    logging.error(f"Error logging in to Instagram: {e}")
-    exit(1)
+# راه‌اندازی ربات اینستاگرام
+instagram_bot = Bot()
+instagram_bot.login(username=INSTAGRAM_USERNAME, password=INSTAGRAM_PASSWORD)
 
-# تابع برای آپلود عکس به استوری
-def upload_to_instagram(image_path):
-    try:
-        insta_client.photo_upload_to_story(image_path, "Uploaded from Telegram")
-        logging.info("Photo uploaded to Instagram story!")
-    except Exception as e:
-        logging.error(f"Error uploading to Instagram: {e}")
+# دستور برای شروع کار ربات تلگرام
+def start(update, context):
+    update.message.reply_text('سلام! من ربات شما هستم.')
 
-# هندلر برای دریافت عکس‌های تلگرام
-def handle_photo(update: Update, context: CallbackContext):
-    chat_id = update.effective_chat.id
-    user = update.effective_user.first_name
-    file = update.message.photo[-1].get_file()  # عکس با بهترین کیفیت
-    file_path = f"./{file.file_id}.jpg"
-    
-    # ذخیره عکس محلی
-    file.download(file_path)
-    logging.info(f"Photo received from {user} in chat {chat_id}, saved as {file_path}")
+# دستورات ربات تلگرام
+dispatcher.add_handler(CommandHandler("start", start))
 
-    # آپلود به اینستاگرام
-    upload_to_instagram(file_path)
+# تابع برای ارسال استوری به اینستاگرام
+def send_instagram_story(photo_path):
+    instagram_bot.upload_story_photo(photo_path)
 
-    # حذف فایل محلی
-    os.remove(file_path)
-    logging.info(f"Photo {file_path} deleted after upload.")
+# تابع برای اکو کردن پیام‌های دریافتی
+def echo(update, context):
+    update.message.reply_text(update.message.text)
 
-# تابع اصلی برای راه‌اندازی ربات تلگرام
-def main():
-    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+# وقتی عکس ارسال می‌شود، آن را ذخیره کرده و به اینستاگرام ارسال می‌کنیم
+def handle_photo(update, context):
+    file = update.message.photo[-1].get_file()  # گرفتن بزرگترین اندازه عکس
+    file.download('photo.jpg')  # دانلود عکس به صورت محلی
+    send_instagram_story('photo.jpg')  # ارسال عکس به استوری اینستاگرام
 
-    if not TELEGRAM_BOT_TOKEN:
-        logging.error("Telegram Bot Token is not set!")
-        return
+# تنظیم هندلر برای عکس‌های ارسالی
+dispatcher.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
-    updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
-    dispatcher = updater.dispatcher
+# MessageHandler برای فیلتر کردن پیام‌های متنی (غیر دستوری)
+dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-    # هندلر برای عکس‌ها
-    photo_handler = MessageHandler(Filters.photo, handle_photo)
-    dispatcher.add_handler(photo_handler)
+# راه‌اندازی ربات تلگرام
+updater.start_polling()
 
-    # شروع ربات
-    logging.info("Bot is starting...")
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == "__main__":
-    main()
+# ربات در حالت idle می‌ماند تا زمانی که متوقف شود
+updater.idle()
