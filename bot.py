@@ -12,8 +12,8 @@ logging.basicConfig(
 
 # لاگین به اینستاگرام
 insta_client = Client()
-INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME")
-INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD")
+INSTAGRAM_USERNAME = os.getenv("dtclubkaryabi")
+INSTAGRAM_PASSWORD = os.getenv("@9126409124ab")
 
 try:
     insta_client.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
@@ -50,7 +50,7 @@ def handle_photo(update: Update, context: CallbackContext):
 
 # تابع اصلی برای راه‌اندازی ربات تلگرام
 def main():
-    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    TELEGRAM_BOT_TOKEN = os.getenv("7888584790:AAFUjnDah1EjPaujasrgPUQx9QpgajCOURY")
 
     if not TELEGRAM_BOT_TOKEN:
         logging.error("Telegram Bot Token is not set!")
