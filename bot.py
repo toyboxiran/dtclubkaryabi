@@ -1,50 +1,65 @@
-from instagrapi import Client
+import os
+import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from instagrapi import Client
+import requests
 
-# اطلاعات مورد نیاز
+# تنظیمات توکن تلگرام و اطلاعات اینستاگرام
 TELEGRAM_TOKEN = '7888584790:AAHwsghQpiyINTEBhIR4CT47i5JYfP3we4k'
-INSTAGRAM_USERNAME = 'YOUR_INSTAGRAM_USERNAME'
-INSTAGRAM_PASSWORD = 'YOUR_INSTAGRAM_PASSWORD'
+INSTAGRAM_USERNAME = 'dtclubkaryabi'
+INSTAGRAM_PASSWORD = '@9126409124aB'
 
-# راه‌اندازی کلاینت اینستاگرام
+# تنظیمات لاگ‌گیری
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# ورود به حساب اینستاگرام
 instagram_client = Client()
-
-# تغییر User-Agent برای جلوگیری از محدودیت‌های اینستاگرام
-instagram_client.set_user_agent(
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-)
-
-# ورود به اینستاگرام
-try:
-    instagram_client.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
-    print("Login to Instagram successful!")
-except Exception as e:
-    print(f"Error logging into Instagram: {e}")
-
-# تابع استارت ربات تلگرام
-async def start(update: Update, context):
-    await update.message.reply_text("سلام! ربات آماده است.")
+instagram_client.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
 
 # تابع ارسال استوری به اینستاگرام
-async def send_story(update: Update, context):
-    photo_path = 'path_to_your_image.jpg'  # مسیر عکس
+def send_instagram_story(image_url):
     try:
-        instagram_client.photo_upload(photo_path, caption="استوری جدید از ربات!")
-        await update.message.reply_text("استوری با موفقیت ارسال شد!")
+        # دانلود عکس
+        image = requests.get(image_url).content
+        with open('temp_image.jpg', 'wb') as f:
+            f.write(image)
+        
+        # ارسال استوری به اینستاگرام
+        instagram_client.photo_upload_to_story('temp_image.jpg')
+        print("استوری با موفقیت ارسال شد!")
     except Exception as e:
-        await update.message.reply_text(f"خطا در ارسال استوری: {e}")
+        print(f"خطا در ارسال استوری: {e}")
 
-# تنظیمات ربات تلگرام
+# تابع برای پردازش عکس‌ها در گروه
+def handle_photo(update: Update, context: CallbackContext):
+    # بررسی اینکه آیا پیام ارسال شده یک عکس است
+    if update.message.photo:
+        # دریافت بزرگترین سایز عکس
+        photo_file = update.message.photo[-1].get_file()
+        photo_url = photo_file.file_url
+        
+        # ارسال عکس به استوری اینستاگرام
+        send_instagram_story(photo_url)
+
+# دستور /start برای اطلاع‌رسانی به کاربر
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text('سلام! ربات آماده به کار است.')
+
+# تنظیمات ربات
 def main():
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
+    # ایجاد اپدیت کننده و دیسپچر
+    updater = Updater(TELEGRAM_TOKEN, use_context=True)
+    dispatcher = updater.dispatcher
 
-    # اضافه کردن دستورها
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("send_story", send_story))
+    # ثبت دستورات و پیام‌های ربات
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(MessageHandler(Filters.photo, handle_photo))
 
-    # اجرا
-    application.run_polling()
+    # شروع ربات
+    updater.start_polling()
+    updater.idle()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
