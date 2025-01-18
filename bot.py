@@ -1,49 +1,44 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler
-from telegram.ext import filters
-from instabot import Bot  # کتابخانه اینستاگرام برای ارسال استوری
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from instagrapi import Client  # کتابخانه اینستاگرام برای ارسال استوری
 
-# توکن ربات تلگرام
-TELEGRAM_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-INSTAGRAM_USERNAME = "YOUR_INSTAGRAM_USERNAME"
-INSTAGRAM_PASSWORD = "YOUR_INSTAGRAM_PASSWORD"
-
-# راه‌اندازی ربات تلگرام
-updater = Updater(TELEGRAM_TOKEN, use_context=True)
-dispatcher = updater.dispatcher
+# توکن تلگرام و اطلاعات اینستاگرام
+TELEGRAM_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+INSTAGRAM_USERNAME = 'YOUR_INSTAGRAM_USERNAME'
+INSTAGRAM_PASSWORD = 'YOUR_INSTAGRAM_PASSWORD'
 
 # راه‌اندازی ربات اینستاگرام
-instagram_bot = Bot()
-instagram_bot.login(username=INSTAGRAM_USERNAME, password=INSTAGRAM_PASSWORD)
+instagram_client = Client()
+instagram_client.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
 
-# دستور برای شروع کار ربات تلگرام
-def start(update, context):
-    update.message.reply_text('سلام! من ربات شما هستم.')
-
-# دستورات ربات تلگرام
-dispatcher.add_handler(CommandHandler("start", start))
-
-# تابع برای ارسال استوری به اینستاگرام
+# تابع ارسال استوری به اینستاگرام
 def send_instagram_story(photo_path):
-    instagram_bot.upload_story_photo(photo_path)
+    instagram_client.photo_upload(photo_path, caption="Your caption")
 
-# تابع برای اکو کردن پیام‌های دریافتی
-def echo(update, context):
-    update.message.reply_text(update.message.text)
+# تابع شروع ربات تلگرام
+async def start(update: Update, context):
+    await update.message.reply("سلام! ربات من آماده است.")
 
-# وقتی عکس ارسال می‌شود، آن را ذخیره کرده و به اینستاگرام ارسال می‌کنیم
-def handle_photo(update, context):
-    file = update.message.photo[-1].get_file()  # گرفتن بزرگترین اندازه عکس
-    file.download('photo.jpg')  # دانلود عکس به صورت محلی
-    send_instagram_story('photo.jpg')  # ارسال عکس به استوری اینستاگرام
-
-# تنظیم هندلر برای عکس‌های ارسالی
-dispatcher.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-
-# MessageHandler برای فیلتر کردن پیام‌های متنی (غیر دستوری)
-dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+# تابع ارسال استوری به اینستاگرام
+async def send_story(update: Update, context):
+    # در اینجا می‌توانید مسیر فایل عکس را دریافت کنید و به اینستاگرام ارسال کنید
+    photo_path = 'path_to_your_image.jpg'
+    send_instagram_story(photo_path)
+    await update.message.reply("استوری به اینستاگرام ارسال شد!")
 
 # راه‌اندازی ربات تلگرام
-updater.start_polling()
+async def main():
+    # ایجاد شیء Application
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-# ربات در حالت idle می‌ماند تا زمانی که متوقف شود
-updater.idle()
+    # اضافه کردن هندلرها
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("send_story", send_story))
+
+    # شروع ربات
+    await application.run_polling()
+
+# اجرای برنامه
+if __name__ == '__main__':
+    import asyncio
+    asyncio.run(main())
